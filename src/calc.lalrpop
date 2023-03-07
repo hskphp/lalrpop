@@ -1,0 +1,40 @@
+use std::str::FromStr;
+use crate::ast::Expr;
+
+grammar;
+
+match {
+    "+",
+    "-",
+    "*",
+    "/",
+    "(",
+    ")",
+    r"[0-9]+",
+
+    // Skip whitespace and comments
+    r"\s*" => { },
+    r"//[^\n\r]*[\n\r]*" => { }, // `// comment`
+    r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { }, // `/* comment */`
+}
+
+pub expr: Expr = {
+    <l:expr> "+" <r:Factor> => Expr::Add(Box::new(l), Box::new(r)),
+    <l:expr> "-" <r:Factor> => Expr::Sub(Box::new(l), Box::new(r)),
+    Factor,
+};
+
+Factor: Expr = {
+    <l:Factor> "*" <r:Term> => Expr::Mul(Box::new(l), Box::new(r)),
+    <l:Factor> "/" <r:Term> => Expr::Div(Box::new(l), Box::new(r)),
+    Term,
+};
+
+Term: Expr = {
+    Num => Expr::Int(<>),
+    "(" <expr> ")",
+};
+
+Num: i32 = {
+    r"[0-9]+" => i32::from_str(<>).unwrap(),
+};
